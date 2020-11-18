@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Karata.Server.Models
 {
-    public abstract class Message<T>
+    public abstract class Message
     {
         public string Content { get; set; }
     }
