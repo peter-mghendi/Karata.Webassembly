@@ -1,13 +1,12 @@
-﻿using Karata.Server.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Karata.Shared.Models;
 using System.Threading.Tasks;
 
 namespace Karata.Server.Hubs.Clients
 {
     public interface IChatClient
     {
-        Task ReceiveMessage(Message message);
+        Task MessageReceived(ChatMessage message);
+
+        Task NewUserConnected(string message);
     }
 }

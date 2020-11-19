@@ -1,0 +1,63 @@
+﻿@page "/chat"
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.Extensions.Logging
+@using Karata.Shared.Models
+
+@implements IAsyncDisposable
+
+<h3>Chat</h3>
+
+<div class="form-group">
+    <label>
+        User:
+        <input class="form-control" @bind="userInput" />
+    </label>
+</div>
+<div class="form-group">
+    <label>
+        Message:
+        <input class="form-control" @bind="messageInput" size="50" />
+    </label>
+</div>
+<button class="btn btn-outline-primary" disabled="@(!IsConnected)" @onclick="Send">Send</button>
+
+<hr />
+
+<ul id="messagelist">
+    @foreach (var message in messages)
+    {
+        <li>@message.Content</li>
+    }
+</ul>
+
+@code {
+    private HubConnection hubConnection;
+    private List<ChatMessage> messages = new();
+    private string userInput;
+    private string messageInput;
+
+    private const string Broadcast = nameof(Broadcast);
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl("https://localhost:5001/hubs/chat")
+            .Build();
+
+        hubConnection.On<ChatMessage>("MessageReceived", message =>
+        {
+            messages.Add(message);
+            StateHasChanged();
+        });
+
+        hubConnection.Closed += async _ => await hubConnection.StartAsync();
+
+        await hubConnection.StartAsync();
+    }
+
+    private async Task Send() => await hubConnection.SendAsync(Broadcast, new ChatMessage { Content = messageInput });
+
+    public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync() => await hubConnection.DisposeAsync();
+}

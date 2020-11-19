@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Karata.Server.Models
+namespace Karata.Shared.Models
 {
-    public abstract class Message
+    public class ChatMessage: Message<string>
     {
-        public string Content { get; set; }
     }
 }
