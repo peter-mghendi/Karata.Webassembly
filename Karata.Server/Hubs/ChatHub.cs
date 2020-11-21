@@ -13,7 +13,7 @@ namespace Karata.Server.Hubs
         }
 
         public override async Task OnConnectedAsync()
-        {;
+        {
             await Clients.All.NewUserConnected("A new user has joined the chat.");
         }
     }

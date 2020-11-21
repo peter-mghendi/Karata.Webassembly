@@ -1,15 +1,21 @@
+using Karata.Server.Data;
 using Karata.Server.Hubs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
+using Npgsql;
+using System;
 
 namespace Karata.Server
 {
     public class Startup
     {
         private const string CorsPolicy = nameof(CorsPolicy);
+        private const string Development = nameof(Development);
 
         public Startup(IConfiguration configuration)
         {
@@ -29,10 +35,39 @@ namespace Karata.Server
                     .AllowCredentials());
             });
 
+            services.AddDbContext<KarataContext>(options =>
+            {
+                string connectionString;
+                var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? Development;
+
+                if (env == Development)
+                {
+                    connectionString = this.Configuration.GetConnectionString(nameof(KarataContext));
+                }
+                else
+                {
+                    Uri databaseUri = new Uri(Environment.GetEnvironmentVariable("DATABASE_URL"));
+                    var userInfo = databaseUri.UserInfo.Split(':');
+
+                    connectionString = new NpgsqlConnectionStringBuilder
+                    {
+                        Host = databaseUri.Host,
+                        Port = databaseUri.Port,
+                        Username = userInfo[0],
+                        Password = userInfo[1],
+                        Database = databaseUri.LocalPath.TrimStart('/'),
+                        SslMode = SslMode.Prefer,
+                        TrustServerCertificate = true
+                    }.ToString();
+                }
+
+                options.UseNpgsql(connectionString);
+            });
+
             services.AddSignalR();
             services.AddControllers();
 
-            services.AddSwaggerGen(c => c.SwaggerDoc("v1", new() { Title = "Karata.Server", Version = "v1" }));
+            services.AddSwaggerGen(c => c.SwaggerDoc("v1", new OpenApiInfo() { Title = "Karata.Server", Version = "v1" }));
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
