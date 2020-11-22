@@ -1,14 +1,20 @@
 using Karata.Server.Data;
 using Karata.Server.Hubs;
+using Karata.Server.Infrastructure;
+using Karata.Server.Models;
+using Karata.Server.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Npgsql;
 using System;
+using System.Text;
 
 namespace Karata.Server
 {
@@ -67,6 +73,45 @@ namespace Karata.Server
             services.AddSignalR();
             services.AddControllers();
 
+            var jwtTokenConfig = Configuration.GetSection("jwtTokenConfig").Get<JwtTokenConfig>();
+            services.AddSingleton(jwtTokenConfig);
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(options =>
+            {
+                options.RequireHttpsMetadata = true;
+                options.SaveToken = true;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtTokenConfig.Issuer,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtTokenConfig.Secret)),
+                    ValidAudience = jwtTokenConfig.Audience,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.FromMinutes(1)
+                };
+            });
+
+            services.AddAuthorization(config =>
+            {
+                config.AddPolicy(Policies.Admin, Policies.AdminPolicy());
+                config.AddPolicy(Policies.User, Policies.UserPolicy());
+            });
+
+            services.AddSingleton<IPasswordService, PasswordService>();
+
+            services.AddScoped<IJwtAuthManager, JwtAuthManager>();
+
+            services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+
+            services.AddScoped<IUserService, UserService>();
+
+            services.AddHostedService<JwtRefreshTokenCache>();
+
             services.AddSwaggerGen(c => c.SwaggerDoc("v1", new OpenApiInfo() { Title = "Karata.Server", Version = "v1" }));
         }
 
@@ -84,6 +129,8 @@ namespace Karata.Server
             app.UseRouting();
 
             app.UseCors(CorsPolicy);
+
+            app.UseAuthentication();
 
             app.UseAuthorization();
 

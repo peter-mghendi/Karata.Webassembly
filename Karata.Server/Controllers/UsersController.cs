@@ -5,6 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Karata.Server.Data;
 using Karata.Server.Models;
+using Karata.Shared.Models;
+using Microsoft.AspNetCore.Authorization;
+using Karata.Server.Infrastructure;
+using System.Text;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
+using Karata.Server.Services;
 
 namespace Karata.Server.Controllers
 {
@@ -12,37 +19,48 @@ namespace Karata.Server.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        private readonly KarataContext _context;
 
-        public UsersController(KarataContext context)
+        private readonly ILogger<UsersController> _logger;
+        private readonly IUserService _userService;
+        private readonly IJwtAuthManager _jwtAuthManager;
+        private readonly IPasswordService _passwordService;
+
+        public UsersController(
+            ILogger<UsersController> logger,
+            IUserService userService,
+            IJwtAuthManager jwtAuthManager,
+            IPasswordService passwordService)
         {
-            _context = context;
+            _logger = logger;
+            _userService = userService;
+            _jwtAuthManager = jwtAuthManager;
+            _passwordService = passwordService;
         }
 
-        // GET: api/Users
+        // GET: api/users
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUser()
-        {
-            return await _context.User.ToListAsync();
-        }
+        [Authorize(Policy = Policies.Admin)]
+        public async Task<ActionResult<IEnumerable<UserDTO>>> GetUserList() =>
+            await _userService.GetUserListAsync();
 
-        // GET: api/Users/5
+        // GET: api/users/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(long id)
+        [Authorize(Policy = Policies.Admin)]
+        public async Task<ActionResult<UserDTO>> GetUser(long id)
         {
-            var user = await _context.User.FindAsync(id);
+            var user = await _userService.FindUserByIdAsync(id);
 
             if (user == null)
             {
                 return NotFound();
             }
 
-            return user;
+            return _userService.ItemToDTO(user);
         }
 
-        // PUT: api/Users/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // PUT: api/users/5
         [HttpPut("{id}")]
+        [Authorize(Policy = Policies.Admin)]
         public async Task<IActionResult> PutUser(long id, User user)
         {
             if (id != user.Id)
@@ -50,57 +68,71 @@ namespace Karata.Server.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(user).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
+
+                await _userService.ModifyUser(user);
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!UserExists(id))
+                if (!await _userService.IsAnExistingUserAsync(id))
                 {
                     return NotFound();
                 }
-                else
-                {
-                    throw;
-                }
+
+                throw;
             }
 
             return NoContent();
         }
 
         // POST: api/Users
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // To protect from overposting attacks, enable the specific properties you want to bind to, for
+        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost]
-        public async Task<ActionResult<User>> PostUser(User user)
+        [AllowAnonymous]
+        public async Task<IActionResult> PostUser(
+            [FromBody] SignupRequest request,
+            [FromServices] IOptions<ApiBehaviorOptions> apiBehaviorOptions)
         {
-            _context.User.Add(user);
-            await _context.SaveChangesAsync();
+            User user = new User
+            {
+                Username = request.Username,
+                Email = request.Email,
+                Password = Encoding.UTF8.GetBytes(request.Password)
+            };
 
-            return CreatedAtAction("GetUser", new { id = user.Id }, user);
+            try
+            {
+                user = await _userService.CreateUser(user);
+            }
+            catch (DbUpdateException)
+            {
+                if (await _userService.IsAnExistingUserAsync(user.Email))
+                {
+                    ModelState.AddModelError(nameof(user.Email), "That email address is already in use");
+                    return apiBehaviorOptions.Value.InvalidModelStateResponseFactory(ControllerContext);
+                }
+                else throw;
+            }
+
+            return CreatedAtAction(nameof(GetUser), new { id = user.Id }, _userService.ItemToDTO(user));
         }
 
-        // DELETE: api/Users/5
+        // DELETE: api/users/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(long id)
+        [Authorize(Policy = Policies.Admin)]
+        public async Task<ActionResult<UserDTO>> DeleteUser(long id)
         {
-            var user = await _context.User.FindAsync(id);
+            var user = await _userService.FindUserByIdAsync(id);
             if (user == null)
             {
                 return NotFound();
             }
 
-            _context.User.Remove(user);
-            await _context.SaveChangesAsync();
+            user = await _userService.DeleteUser(user);
 
-            return NoContent();
-        }
-
-        private bool UserExists(long id)
-        {
-            return _context.User.Any(e => e.Id == id);
+            return _userService.ItemToDTO(user);
         }
     }
 }
