@@ -1,6 +1,7 @@
 using Karata.Server.Data;
 using Karata.Server.Hubs;
 using Karata.Server.Infrastructure;
+using Karata.Server.Infrastructure.Filters;
 using Karata.Server.Models;
 using Karata.Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -112,7 +113,28 @@ namespace Karata.Server
 
             services.AddHostedService<JwtRefreshTokenCache>();
 
-            services.AddSwaggerGen(c => c.SwaggerDoc("v1", new OpenApiInfo() { Title = "Karata.Server", Version = "v1" }));
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo() { Title = "Karata.Server", Version = "v1" });
+
+                var jwtScheme = new OpenApiSecurityScheme
+                {
+                    Name = "JWT Authentication",
+                    Description = "Enter JWT Bearer token",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    Reference = new OpenApiReference
+                    {
+                        Id = JwtBearerDefaults.AuthenticationScheme,
+                        Type = ReferenceType.SecurityScheme
+                    }
+                };
+                c.AddSecurityDefinition(jwtScheme.Reference.Id, jwtScheme);
+
+                c.OperationFilter<AuthOperationFilter>();
+            });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
