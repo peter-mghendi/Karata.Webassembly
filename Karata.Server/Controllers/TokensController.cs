@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 
 namespace Karata.Server.Controllers
 {
+    [Produces("application/json")]
     [Route("api/users/[controller]")]
     [ApiController]
     public class TokensController : ControllerBase
@@ -40,6 +41,9 @@ namespace Karata.Server.Controllers
 
         [AllowAnonymous]
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<LoginResult>> Login(LoginRequest request)
         {
             if (!ModelState.IsValid)
@@ -56,8 +60,8 @@ namespace Karata.Server.Controllers
 
             var claims = new Claim[]
             {
-                new Claim(ClaimTypes.Name, request.Email),
-                new Claim(ClaimTypes.Role, role)
+                new (ClaimTypes.Name, request.Email),
+                new (ClaimTypes.Role, role)
             };
 
             var jwtResult = await _jwtAuthManager.GenerateTokensAsync(request.Email, claims, DateTime.Now);
@@ -84,6 +88,9 @@ namespace Karata.Server.Controllers
 
         [HttpPost("refresh")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<LoginResult>> RefreshToken([FromBody] RefreshTokenRequest request)
         {
             try
@@ -115,6 +122,8 @@ namespace Karata.Server.Controllers
 
         [HttpPost("impersonation/start")]
         [Authorize(Policy = Policies.Admin)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<LoginResult>> Impersonate([FromBody] ImpersonationRequest request)
         {
             var email = User.Identity.Name;
@@ -132,11 +141,11 @@ namespace Karata.Server.Controllers
                 return BadRequest("This action is not supported.");
             }
 
-            var claims = new[]
+            var claims = new Claim[]
             {
-                new Claim(ClaimTypes.Name,request.Email),
-                new Claim(ClaimTypes.Role, impersonatedRole),
-                new Claim("OriginalEmail", email)
+                new (ClaimTypes.Name, request.Email),
+                new (ClaimTypes.Role, impersonatedRole),
+                new ("OriginalEmail", email)
             };
 
             var jwtResult = await _jwtAuthManager.GenerateTokensAsync(request.Email, claims, DateTime.Now);
@@ -154,6 +163,8 @@ namespace Karata.Server.Controllers
 
         [HttpPost("impersonation/stop")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<LoginResult>> StopImpersonation()
         {
             var email = User.Identity.Name;
@@ -162,13 +173,13 @@ namespace Karata.Server.Controllers
             {
                 return BadRequest("You are not impersonating anyone.");
             }
-            _logger.LogInformation($"User [{originalEmail}] is trying to stop impersonate [{email}].");
+            _logger.LogInformation($"User [{originalEmail}] is trying to stop impersonating [{email}].");
 
             var role = await _userService.GetUserRoleAsync(originalEmail);
-            var claims = new[]
+            var claims = new Claim[]
             {
-                new Claim(ClaimTypes.Name, originalEmail),
-                new Claim(ClaimTypes.Role, role)
+                new (ClaimTypes.Name, originalEmail),
+                new (ClaimTypes.Role, role)
             };
 
             var jwtResult = await _jwtAuthManager.GenerateTokensAsync(originalEmail, claims, DateTime.Now);

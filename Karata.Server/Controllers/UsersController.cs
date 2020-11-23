@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Karata.Server.Data;
 using Karata.Server.Models;
 using Karata.Shared.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -12,9 +10,11 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Karata.Server.Services;
+using Microsoft.AspNetCore.Http;
 
 namespace Karata.Server.Controllers
 {
+    [Produces("application/json")]
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
@@ -37,16 +37,17 @@ namespace Karata.Server.Controllers
             _passwordService = passwordService;
         }
 
-        // GET: api/users
         [HttpGet]
         [Authorize(Policy = Policies.Admin)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<UserDTO>>> GetUserList() =>
             await _userService.GetUserListAsync();
 
-        // GET: api/users/5
         [HttpGet("{id}")]
         [Authorize(Policy = Policies.Admin)]
-        public async Task<ActionResult<UserDTO>> GetUser(long id)
+        [ProducesResponseType(StatusCodes.Status200OK)]    
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<UserDTO>> GetUser(long id)   
         {
             var user = await _userService.FindUserByIdAsync(id);
 
@@ -58,9 +59,11 @@ namespace Karata.Server.Controllers
             return _userService.ItemToDTO(user);
         }
 
-        // PUT: api/users/5
         [HttpPut("{id}")]
         [Authorize(Policy = Policies.Admin)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> PutUser(long id, User user)
         {
             if (id != user.Id)
@@ -86,11 +89,10 @@ namespace Karata.Server.Controllers
             return NoContent();
         }
 
-        // POST: api/Users
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost]
         [AllowAnonymous]
+        [ProducesResponseType(typeof(UserDTO), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> PostUser(
             [FromBody] SignupRequest request,
             [FromServices] IOptions<ApiBehaviorOptions> apiBehaviorOptions)
@@ -119,9 +121,10 @@ namespace Karata.Server.Controllers
             return CreatedAtAction(nameof(GetUser), new { id = user.Id }, _userService.ItemToDTO(user));
         }
 
-        // DELETE: api/users/5
         [HttpDelete("{id}")]
         [Authorize(Policy = Policies.Admin)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<UserDTO>> DeleteUser(long id)
         {
             var user = await _userService.FindUserByIdAsync(id);
@@ -131,7 +134,6 @@ namespace Karata.Server.Controllers
             }
 
             user = await _userService.DeleteUser(user);
-
             return _userService.ItemToDTO(user);
         }
     }

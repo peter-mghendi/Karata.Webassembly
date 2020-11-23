@@ -1,17 +1,15 @@
 ﻿using Karata.Server.Data;
-using Karata.Server.Models;
 using Karata.Server.Services;
 using Karata.Shared.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Karata.Server.Controllers
 {
+    [Produces("application/json")]
     [Route("api/me")]
     [ApiController]
     [Authorize]
@@ -26,33 +24,30 @@ namespace Karata.Server.Controllers
             _userService = userService;
         }
 
-        // GET: api/me
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<UserDTO>> GetUser()
         {
             var user = await _context.Users.SingleAsync(u => u.Email == User.Identity.Name);
 
             if (user == null)
             {
-                return NotFound();
+                return BadRequest();
             }
 
             return _userService.ItemToDTO(user);
         }
 
-        // PUT: api/me
         [HttpPut]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> PutUser(UserDTO userDTO)
         {
             var email = User.Identity.Name;
             var user = await _context.Users.SingleAsync(u => u.Email == email);
 
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            if (user.Id != userDTO.Id)
+            if (user == null || user.Id != userDTO.Id)
             {
                 return BadRequest();
             }
@@ -68,7 +63,7 @@ namespace Karata.Server.Controllers
             {
                 if (!await _userService.IsAnExistingUserAsync(email))
                 {
-                    return NotFound();
+                    return BadRequest();
                 }
 
                 throw;
@@ -77,23 +72,24 @@ namespace Karata.Server.Controllers
             return NoContent();
         }
 
-        // TODO Change password
+        // TODO: Change password
 
-        // DELETE: api/me
         [HttpDelete]
-        public async Task<ActionResult<User>> DeleteUser()
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<UserDTO>> DeleteUser()
         {
             var user = await _context.Users.SingleAsync(u => u.Email == User.Identity.Name);
 
             if (user == null)
             {
-                return NotFound();
+                return BadRequest();
             }
 
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
 
-            return user;
+            return _userService.ItemToDTO(user);
         }
     }
 

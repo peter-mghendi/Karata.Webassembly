@@ -6,12 +6,13 @@ using System.Threading.Tasks;
 
 namespace Karata.Server.Controllers
 {
+    [Produces("application/json")]
     [Route("api/v1/[controller]")]
     [ApiController]
 
     public class ChatController : ControllerBase
     {
-        private readonly IHubContext<ChatHub> _hubContext;
+        private readonly IHubContext<ChatHub> _hubContext; 
 
         public ChatController(IHubContext<ChatHub> hubContext)
         {
