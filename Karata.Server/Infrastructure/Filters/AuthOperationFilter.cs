@@ -15,7 +15,9 @@ namespace Karata.Server.Infrastructure.Filters
             var attributes = context.MethodInfo.DeclaringType.GetCustomAttributes(true)
                 .Union(context.MethodInfo.GetCustomAttributes(true));
 
-            if (attributes.OfType<AuthorizeAttribute>().Any() && !attributes.OfType<AllowAnonymousAttribute>().Any())
+            var authAttributes = attributes.OfType<AuthorizeAttribute>();
+
+            if (authAttributes.Any() && !attributes.OfType<AllowAnonymousAttribute>().Any())
             {
                 OpenApiSecurityScheme jwtScheme = new()
                 {
@@ -33,8 +35,10 @@ namespace Karata.Server.Infrastructure.Filters
 
                 operation.Responses.Add("401", new() { Description = "Unauthorized" });
 
-                // TODO: Only add this to endpoints that require specific policies
-                // operation.Responses.Add("403", new() { Description = "Forbidden" });
+                if (authAttributes.Any(a => !string.IsNullOrEmpty(a.Policy)))
+                {
+                    operation.Responses.Add("403", new() { Description = "Forbidden" });
+                }
             }
         }
     }
