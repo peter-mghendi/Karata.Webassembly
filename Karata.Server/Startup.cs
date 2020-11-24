@@ -36,7 +36,8 @@ namespace Karata.Server
             services.AddCors(options =>
             {
                 options.AddPolicy(CorsPolicy, builder => builder
-                    .WithOrigins("https://localhost:4201")
+                    // .WithOrigins("https://localhost:4201")
+                    .AllowAnyOrigin
                     .AllowAnyMethod()
                     .AllowAnyHeader()
                     .AllowCredentials());
