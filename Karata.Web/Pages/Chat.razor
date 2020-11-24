@@ -7,9 +7,9 @@
 <h3>Chat</h3>
 
 <div class="form-group">
-    <label>
+    <label class="w-100">
         Message:
-        <input class="form-control" @bind="messageInput" class="w-100" />
+        <input class="form-control w-100" @bind="messageInput" />
     </label>
 </div>
 <button class="btn btn-outline-primary" disabled="@(!IsConnected)" @onclick="Send">Send</button>
