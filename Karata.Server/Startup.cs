@@ -40,7 +40,8 @@ namespace Karata.Server
                     .AllowAnyOrigin()
                     .AllowAnyMethod()
                     .AllowAnyHeader()
-                    .AllowCredentials());
+                    // .AllowCredentials()
+                 );
             });
 
             services.AddDbContext<KarataContext>(options =>
