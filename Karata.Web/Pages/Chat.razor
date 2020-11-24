@@ -33,7 +33,7 @@
     protected override async Task OnInitializedAsync()
     {
         hubConnection = new HubConnectionBuilder()
-            .WithUrl("https://karata-server.herokuapp.cpm/hubs/chat")
+            .WithUrl("https://karata-server.herokuapp.com/hubs/chat")
             .Build();
 
         hubConnection.On<ChatMessage>("MessageReceived", message =>
