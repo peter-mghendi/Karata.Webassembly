@@ -7,15 +7,9 @@
 <h3>Chat</h3>
 
 <div class="form-group">
-    <label>
-        User:
-        <input class="form-control" @bind="userInput" />
-    </label>
-</div>
-<div class="form-group">
-    <label>
+    <label class="w-100">
         Message:
-        <input class="form-control" @bind="messageInput" size="50" />
+        <input class="form-control w-100" @bind="messageInput" />
     </label>
 </div>
 <button class="btn btn-outline-primary" disabled="@(!IsConnected)" @onclick="Send">Send</button>
@@ -32,7 +26,6 @@
 @code {
     private HubConnection hubConnection;
     private List<ChatMessage> messages = new();
-    private string userInput;
     private string messageInput;
 
     private const string Broadcast = nameof(Broadcast);
@@ -40,7 +33,7 @@
     protected override async Task OnInitializedAsync()
     {
         hubConnection = new HubConnectionBuilder()
-            .WithUrl("https://localhost:5001/hubs/chat")
+            .WithUrl("https://karata-server.herokuapp.com/hubs/chat")
             .Build();
 
         hubConnection.On<ChatMessage>("MessageReceived", message =>
