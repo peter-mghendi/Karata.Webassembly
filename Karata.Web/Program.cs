@@ -1,4 +1,6 @@
+using Karata.Client;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
 
 namespace Karata.Web
@@ -8,7 +10,11 @@ namespace Karata.Web
         public static async Task Main(string[] args)
         {
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
+
             builder.RootComponents.Add<App>("#app");
+
+            builder.Services.AddSingleton<IKarataClient, KarataClient>();
+
             await builder.Build().RunAsync();
         }
     }
