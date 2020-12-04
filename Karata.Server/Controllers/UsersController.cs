@@ -15,7 +15,7 @@ using Microsoft.AspNetCore.Http;
 namespace Karata.Server.Controllers
 {
     [Produces("application/json")]
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
     {

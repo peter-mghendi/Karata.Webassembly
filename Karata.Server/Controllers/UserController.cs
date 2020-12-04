@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Karata.Server.Controllers
 {
     [Produces("application/json")]
-    [Route("api/me")]
+    [Route("api/v1/me")]
     [ApiController]
     [Authorize]
     public class UserController : ControllerBase

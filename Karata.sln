@@ -5,9 +5,9 @@ VisualStudioVersion = 16.0.30711.63
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Karata.Server", "Karata.Server\Karata.Server.csproj", "{10A1B37B-04C7-47E4-AB95-A675E8D321C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Karata.Web", "Karata.Web\Karata.Web.csproj", "{52FCA175-C78D-459C-A6C0-41C9C0965EB3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Karata.Web", "Karata.Web\Karata.Web.csproj", "{52FCA175-C78D-459C-A6C0-41C9C0965EB3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Karata.Shared", "Karata.Shared\Karata.Shared.csproj", "{E513E4B2-A54A-4836-BE80-CA724C4F522F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Karata.Shared", "Karata.Shared\Karata.Shared.csproj", "{E513E4B2-A54A-4836-BE80-CA724C4F522F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

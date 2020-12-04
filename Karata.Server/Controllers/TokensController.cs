@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 namespace Karata.Server.Controllers
 {
     [Produces("application/json")]
-    [Route("api/users/[controller]")]
+    [Route("api/v1/users/[controller]")]
     [ApiController]
     public class TokensController : ControllerBase
     {
