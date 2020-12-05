@@ -1,11 +1,22 @@
 ﻿using Karata.Shared.Models;
 using Karata.Shared.Services;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace Karata.Web.Services
 {
     public class AuthenticationService : IAuthenticationService
     {
-        public LoginResult Authentication { private get; set; }
+        private LoginResult _authentication;
+        public LoginResult Authentication
+        {
+            private get => _authentication;
+            set
+            {
+                _authentication = value;
+                NotifyPropertyChanged();
+            }
+        }
 
         public string Role => Authentication.Role;
 
@@ -14,5 +25,15 @@ namespace Karata.Web.Services
         public bool IsAuthenticated => Authentication?.AccessToken is not null;
 
         public AuthenticationService() => Authentication = new();
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
     }
 }

@@ -1,8 +1,9 @@
 ﻿using Karata.Shared.Models;
+using System.ComponentModel;
 
 namespace Karata.Shared.Services
 {
-    public interface IAuthenticationService
+    public interface IAuthenticationService : INotifyPropertyChanged
     {
         public LoginResult Authentication { set; }
 
