@@ -59,7 +59,7 @@
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        if (Authenticator.IsAuthenticated()) Navigator.NavigateTo("");
+        if (Authenticator.IsAuthenticated) Navigator.NavigateTo("");
     }
 
     private async Task TryAuth()

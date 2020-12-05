@@ -1,0 +1,19 @@
+﻿@page "/logout"
+
+@inject IAuthenticationService Authenticator
+@inject IKarataClient Client
+@inject NavigationManager Navigator
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await Client.InvalidateTokenAsync();
+        }
+        catch { }
+
+        Authenticator.Authentication = null;
+        Navigator.NavigateTo("login");
+    }
+}

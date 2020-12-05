@@ -6,7 +6,7 @@ namespace Karata.Shared.Services
     {
         public LoginResult Authentication { set; }
 
-        public bool IsAuthenticated();
+        public bool IsAuthenticated { get; }
 
         public string Role { get; }
 

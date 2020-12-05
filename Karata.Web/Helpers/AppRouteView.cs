@@ -21,7 +21,7 @@ namespace Karata.Web.Helpers
         {
             var authorizeAttribute = Attribute.GetCustomAttribute(RouteData.PageType, typeof(AuthorizeAttribute)) as AuthorizeAttribute;
 
-            if (authorizeAttribute is not null && !Authenticator.IsAuthenticated())
+            if (authorizeAttribute is not null && !Authenticator.IsAuthenticated)
             {
                 var returnUrl = WebUtility.UrlEncode(new Uri(Navigator.Uri).PathAndQuery);
                 Navigator.NavigateTo($"login?returnUrl={returnUrl}");
