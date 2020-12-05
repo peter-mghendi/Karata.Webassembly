@@ -1,10 +1,8 @@
-using Karata.Shared;
 using Karata.Shared.Client;
+using Karata.Shared.Services;
 using Karata.Web.Services;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Karata.Web
@@ -18,9 +16,9 @@ namespace Karata.Web
 
             builder.RootComponents.Add<App>("#app");
 
-            builder.Services.AddSingleton<ITokenService, TokenService>();
+            builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
 
-            builder.Services.AddSingleton<IKarataClient, KarataClient>(sp => new(sp.GetRequiredService<ITokenService>()) { BaseUrl = API_URL });
+            builder.Services.AddSingleton<IKarataClient, KarataClient>(sp => new(sp.GetRequiredService<IAuthenticationService>()) { BaseUrl = API_URL });
 
             await builder.Build().RunAsync();
         }

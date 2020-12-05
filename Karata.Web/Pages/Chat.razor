@@ -1,6 +1,5 @@
 ﻿@page "/chat"
-@using Microsoft.AspNetCore.SignalR.Client
-@using Karata.Shared.Models
+@attribute [Authorize] 
 
 @implements IAsyncDisposable
 
@@ -36,14 +35,15 @@
     private string messageInput;
 
     private const string Broadcast = nameof(Broadcast);
+    private const string MessageReceived = nameof(MessageReceived);
 
     protected override async Task OnInitializedAsync()
     {
         hubConnection = new HubConnectionBuilder()
-            .WithUrl("https://localhost:5001/hubs/chat")
+            .WithUrl("https://karata-server.herokuapp.com/hubs/chat")
             .Build();
 
-        hubConnection.On<ChatMessage>("MessageReceived", message =>
+        hubConnection.On<ChatMessage>(MessageReceived, message =>
         {
             messages.Add(message);
             StateHasChanged();

@@ -1,5 +1,9 @@
 ﻿@page "/login"
 
+@inject IAuthenticationService Authenticator
+@inject IKarataClient Client
+@inject NavigationManager Navigator
+
 <EditForm Model="@formModel" OnValidSubmit="@TryAuth" class="form-signin">
     <DataAnnotationsValidator />
 
@@ -8,6 +12,16 @@
         <h1 class="h3 mb-3 font-weight-normal">Sign In</h1>
         <p>Welcome back!</p>
     </div>
+
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @error
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="@(() => error = "")">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
 
     <div class="form-group">
         <label for="email-address">Email Address</label>
@@ -21,11 +35,10 @@
         <ValidationMessage For=@(() => formModel.Password) />
     </div>
 
-    @*<input class="btn btn-primary btn-block" type="submit" disabled=@loading value=@buttonText/>*@
     <button class="btn btn-outline-primary btn-block" type="submit" disabled=@loading>
         @if (loading)
         {
-            <span class="spinner-grow spinner-grow-sm mr-2"></span>  
+            <span class="spinner-grow spinner-grow-sm mr-2"></span>
         }
         @buttonText
     </button>
@@ -33,16 +46,21 @@
     <p class="mt-5 mb-3 text-muted text-center">© 2020</p>
 </EditForm>
 
-@code 
+@code
 {
-    [Inject]
-    private IKarataClient Client { get; set; }
-
     private bool loading = false;
 
     private string buttonText { get => loading ? "Loading..." : "Sign In"; }
 
+    private string error = string.Empty;
+
     private LoginRequest formModel = new();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        if (Authenticator.IsAuthenticated()) Navigator.NavigateTo("");
+    }
 
     private async Task TryAuth()
     {
@@ -51,11 +69,21 @@
         try
         {
             var result = await Client.AuthenticateAsync(formModel);
-            Console.WriteLine($"Login Request Successful!\nToken: {result.AccessToken}");
+            Authenticator.Authentication = result;
+            Navigator.NavigateTo(Navigator.QueryString("returnUrl") ?? "");
         }
-        catch
+        catch (FlurlHttpTimeoutException)
         {
-            // TODO: Show error
+            error = "Could not connect to the server.";
+        }
+        catch (FlurlHttpException ex)
+        {
+            error = ex.Call.Response.StatusCode switch
+            {
+                400 => "The entered credentials are invalid.",
+                404 => "The entered credentials are incorrect.",
+                _ => "Something went wrong."
+            };
         }
 
         formModel.Password = string.Empty;
