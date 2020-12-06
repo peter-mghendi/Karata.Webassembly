@@ -18,11 +18,13 @@ namespace Karata.Web.Services
             }
         }
 
-        public string Role => Authentication.Role;
-
-        public string Token => Authentication.AccessToken;
+        public string AccessToken => Authentication.AccessToken;
 
         public bool IsAuthenticated => Authentication?.AccessToken is not null;
+
+        public string RefreshToken => Authentication.RefreshToken;
+
+        public string Role => Authentication.Role;
 
         public AuthenticationService() => Authentication = new();
 

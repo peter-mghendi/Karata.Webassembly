@@ -15,7 +15,7 @@ namespace Karata.Shared.Client
                 settings.BeforeCall = call =>
                 {
                     if (call.Request.Url.Path != "/api/v1/tokens" || call.Request.Verb != HttpMethod.Post)
-                        call.Request = call.Request.WithOAuthBearerToken(authenticationService.Token);
+                        call.Request = call.Request.WithOAuthBearerToken(authenticationService.AccessToken);
                 };
             });
         }

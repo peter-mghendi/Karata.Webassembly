@@ -7,5 +7,7 @@ namespace Karata.Shared.Models
         public string ConnectionId { get; set; }
         public T Content { get; set; }
         public DateTimeOffset DateSent { get; set; }
+
+        public Message() => DateSent = DateTime.Now;
     }
 }

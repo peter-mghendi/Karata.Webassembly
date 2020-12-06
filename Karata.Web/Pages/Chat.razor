@@ -1,37 +1,36 @@
 ﻿@page "/chat"
-@attribute [Authorize] 
+@attribute [Authorize]
 
 @implements IAsyncDisposable
+
+@inject IAuthenticationService Authenticator
+@inject IKarataClient Client
 
 <h3>Chat</h3>
 
 <div class="form-group">
-    <label>
-        User:
-        <input class="form-control" @bind="userInput" />
-    </label>
+    <label for="message">Message:</label>
+    <textarea id="message" class="form-control w-100" @bind="messageInput" rows="4" />
+    
 </div>
-<div class="form-group">
-    <label>
-        Message:
-        <input class="form-control" @bind="messageInput" size="50" />
-    </label>
+
+<div class="form-group d-flex">
+    <button class="btn btn-outline-primary mx-auto" disabled="@(!IsConnected)" @onclick="Send">Send</button>
 </div>
-<button class="btn btn-outline-primary" disabled="@(!IsConnected)" @onclick="Send">Send</button>
 
-<hr />
-
-<ul id="messagelist">
+<ul id="messagelist" class="list-group list-group-flush">
     @foreach (var message in messages)
     {
-        <li>@message.Content</li>
+        <li class="list-group-item d-flex">
+            @message.Content
+            <small class="text-muted ml-auto">@message.DateSent.ToString()</small>
+        </li>
     }
 </ul>
 
 @code {
     private HubConnection hubConnection;
     private List<ChatMessage> messages = new();
-    private string userInput;
     private string messageInput;
 
     private const string Broadcast = nameof(Broadcast);

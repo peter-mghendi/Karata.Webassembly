@@ -7,10 +7,12 @@ namespace Karata.Shared.Services
     {
         public LoginResult Authentication { set; }
 
+        public string AccessToken { get; }
+
         public bool IsAuthenticated { get; }
 
-        public string Role { get; }
+        public string RefreshToken { get; }
 
-        public string Token { get; }
+        public string Role { get; }
     }
 }
