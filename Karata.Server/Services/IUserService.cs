@@ -12,7 +12,6 @@ namespace Karata.Server.Services
         Task<User> FindUserByEmailAsync(string email);
         Task<User> FindUserByIdAsync(long id);
         Task<List<UserDTO>> GetUserListAsync();
-        Task<string> GetUserRoleAsync(string email);
         Task<bool> IsAnExistingUserAsync(long id);
         Task<bool> IsAnExistingUserAsync(string email);
         Task<bool> IsValidUserCredentialsAsync(string email, string password);

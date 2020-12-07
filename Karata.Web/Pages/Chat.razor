@@ -1,25 +1,29 @@
 ﻿@page "/chat"
-@using Microsoft.AspNetCore.SignalR.Client
-@using Karata.Shared.Models
+@attribute [Authorize]
 
 @implements IAsyncDisposable
+
+@inject IAuthenticationService Authenticator
+@inject IKarataClient Client
 
 <h3>Chat</h3>
 
 <div class="form-group">
-    <label class="w-100">
-        Message:
-        <input class="form-control w-100" @bind="messageInput" />
-    </label>
+    <label for="message">Message:</label>
+    <textarea id="message" class="form-control w-100" @bind="messageInput" rows="4" />
 </div>
-<button class="btn btn-outline-primary" disabled="@(!IsConnected)" @onclick="Send">Send</button>
 
-<hr />
+<div class="form-group d-flex">
+    <button class="btn btn-outline-primary mx-auto" disabled="@(!IsConnected)" @onclick="Send">Send</button>
+</div>
 
-<ul id="messagelist">
+<ul id="messagelist" class="list-group list-group-flush">
     @foreach (var message in messages)
     {
-        <li>@message.Content</li>
+        <li class="list-group-item d-flex">
+            @message.Sender: @message.Content
+            <small class="text-muted ml-auto">@message.DateSent.ToString()</small>
+        </li>
     }
 </ul>
 
@@ -29,14 +33,30 @@
     private string messageInput;
 
     private const string Broadcast = nameof(Broadcast);
+    private const string MessageReceived = nameof(MessageReceived);
 
     protected override async Task OnInitializedAsync()
     {
         hubConnection = new HubConnectionBuilder()
-            .WithUrl("https://karata-server.herokuapp.com/hubs/chat")
+            .WithUrl("https://karata-server.herokuapp.com/hubs/chat", options =>
+            {
+                options.AccessTokenProvider = async () =>
+                {
+                    try
+                    {
+                        Authenticator.Authentication = await Client.RefreshTokenAsync(new() { RefreshToken = Authenticator.RefreshToken });
+                    }
+                    catch
+                    {
+                        // TODO: Handle this gracefully. Prompt re-login? Login modal?
+                    }
+
+                    return Authenticator.AccessToken;
+                };
+            })
             .Build();
 
-        hubConnection.On<ChatMessage>("MessageReceived", message =>
+        hubConnection.On<ChatMessage>(MessageReceived, message =>
         {
             messages.Add(message);
             StateHasChanged();
