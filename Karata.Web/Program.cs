@@ -9,7 +9,8 @@ namespace Karata.Web
 {
     public class Program
     {
-        private const string API_URL = "https://karata-server.herokuapp.com/api";
+        private const string API_URL = "https://karata-server.herokuapp.com/api/v1";
+
         public static async Task Main(string[] args)
         {
             var builder = WebAssemblyHostBuilder.CreateDefault(args);

@@ -7,6 +7,7 @@ using Karata.Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +17,7 @@ using Microsoft.OpenApi.Models;
 using Npgsql;
 using System;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Karata.Server
 {
@@ -97,6 +99,20 @@ namespace Karata.Server
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromMinutes(1)
                 };
+
+                options.Events = new()
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat"))
+                            context.Token = accessToken;
+                        
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
             services.AddAuthorization(config =>
@@ -112,6 +128,8 @@ namespace Karata.Server
             services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 
             services.AddScoped<IUserService, UserService>();
+
+            services.AddSingleton<IUserIdProvider, NameUserIdProvider>();
 
             services.AddHostedService<JwtRefreshTokenCache>();
 

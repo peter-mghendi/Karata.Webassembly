@@ -50,17 +50,6 @@ namespace Karata.Server.Services
         public async Task<bool> IsAnExistingUserAsync(string email) =>
             await _context.Users.AnyAsync(e => e.Email.Equals(email));
 
-        public async Task<string> GetUserRoleAsync(string email)
-        {
-            if (!await IsAnExistingUserAsync(email))
-            {
-                return string.Empty;
-            }
-
-            var user = await _context.Users.SingleAsync(u => u.Email.Equals(email));
-            return user.Role;
-        }
-
         public UserDTO ItemToDTO(User user) => new()
         {
             Id = user.Id,

@@ -25,6 +25,8 @@ namespace Karata.Server.Controllers
         private readonly IJwtAuthManager _jwtAuthManager;
         private readonly IRefreshTokenService _refreshTokenService;
 
+        private const string OriginalEmail = nameof(OriginalEmail);
+
         public TokensController(
             KarataContext context,
             ILogger<TokensController> logger,
@@ -56,12 +58,13 @@ namespace Karata.Server.Controllers
                 return NotFound();
             }
 
-            var role = await _userService.GetUserRoleAsync(request.Email);
+            var user = await _userService.FindUserByEmailAsync(request.Email);
 
             var claims = new Claim[]
             {
-                new (ClaimTypes.Name, request.Email),
-                new (ClaimTypes.Role, role)
+                new (ClaimTypes.Name, user.Username),
+                new (ClaimTypes.Email, user.Email),
+                new (ClaimTypes.Role, user.Role)
             };
 
             var jwtResult = await _jwtAuthManager.GenerateTokensAsync(request.Email, claims, DateTime.Now);
@@ -70,7 +73,8 @@ namespace Karata.Server.Controllers
             return new LoginResult
             {
                 Email = request.Email,
-                Role = role,
+                Username = user.Username,
+                Role = user.Role,
                 AccessToken = jwtResult.AccessToken,
                 RefreshToken = jwtResult.RefreshToken.TokenString
             };
@@ -94,8 +98,8 @@ namespace Karata.Server.Controllers
         {
             try
             {
-                var email = User.Identity.Name;
-                _logger.LogInformation($"User [{email}] is trying to refresh JWT token.");
+                var username = User.Identity.Name;
+                _logger.LogInformation($"User [{username}] is trying to refresh JWT token.");
 
                 if (string.IsNullOrWhiteSpace(request.RefreshToken))
                 {
@@ -104,10 +108,11 @@ namespace Karata.Server.Controllers
 
                 var accessToken = await HttpContext.GetTokenAsync("Bearer", "access_token");
                 var jwtResult = await _jwtAuthManager.RefreshAsync(request.RefreshToken, accessToken, DateTime.Now);
-                _logger.LogInformation($"User [{email}] has refreshed JWT token.");
+                _logger.LogInformation($"User [{username}] has refreshed JWT token.");
                 return new LoginResult
                 {
-                    Email = email,
+                    Email = User.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty,
+                    Username = username,
                     Role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty,
                     AccessToken = jwtResult.AccessToken,
                     RefreshToken = jwtResult.RefreshToken.TokenString
@@ -125,16 +130,16 @@ namespace Karata.Server.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<LoginResult>> Impersonate([FromBody] ImpersonationRequest request)
         {
-            var email = User.Identity.Name;
+            var email = User.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
             _logger.LogInformation($"User [{email}] is trying to impersonate [{request.Email}].");
 
-            var impersonatedRole = await _userService.GetUserRoleAsync(request.Email);
-            if (string.IsNullOrWhiteSpace(impersonatedRole))
+            var user = await _userService.FindUserByEmailAsync(request.Email);
+            if (string.IsNullOrWhiteSpace(user.Role))
             {
                 _logger.LogInformation($"User [{email}] failed to impersonate [{request.Email}] due to the target user not found.");
                 return BadRequest($"The target user [{request.Email}] is not found.");
             }
-            if (impersonatedRole == Policies.Admin)
+            if (user.Role == Policies.Admin)
             {
                 _logger.LogInformation($"User [{email}] is not allowed to impersonate another Admin.");
                 return BadRequest("This action is not supported.");
@@ -142,18 +147,20 @@ namespace Karata.Server.Controllers
 
             var claims = new Claim[]
             {
-                new (ClaimTypes.Name, request.Email),
-                new (ClaimTypes.Role, impersonatedRole),
-                new ("OriginalEmail", email)
+                new (ClaimTypes.Email, request.Email),
+                new (ClaimTypes.Name, user.Username),
+                new (ClaimTypes.Role, user.Role),
+                new (OriginalEmail, email)
             };
 
             var jwtResult = await _jwtAuthManager.GenerateTokensAsync(request.Email, claims, DateTime.Now);
-            _logger.LogInformation($"User [{request.Email}] is impersonating [{request.Email}] in the system.");
+            _logger.LogInformation($"User [{email}] is impersonating [{request.Email}] in the system.");
 
             return new LoginResult
             {
                 Email = request.Email,
-                Role = impersonatedRole,
+                Username = user.Username,
+                Role = user.Username,
                 OriginalEmail = email,
                 AccessToken = jwtResult.AccessToken,
                 RefreshToken = jwtResult.RefreshToken.TokenString
@@ -166,19 +173,20 @@ namespace Karata.Server.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<LoginResult>> StopImpersonation()
         {
-            var email = User.Identity.Name;
-            var originalEmail = User.FindFirst("OriginalEmail")?.Value;
+            var email = User.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
+            var originalEmail = User.FindFirst(OriginalEmail)?.Value;
             if (string.IsNullOrWhiteSpace(originalEmail))
             {
                 return BadRequest("You are not impersonating anyone.");
             }
             _logger.LogInformation($"User [{originalEmail}] is trying to stop impersonating [{email}].");
 
-            var role = await _userService.GetUserRoleAsync(originalEmail);
+            var user = await _userService.FindUserByEmailAsync(originalEmail);
             var claims = new Claim[]
             {
-                new (ClaimTypes.Name, originalEmail),
-                new (ClaimTypes.Role, role)
+                new (ClaimTypes.Email, originalEmail),
+                new (ClaimTypes.Name, user.Username),
+                new (ClaimTypes.Role, user.Role)
             };
 
             var jwtResult = await _jwtAuthManager.GenerateTokensAsync(originalEmail, claims, DateTime.Now);
@@ -187,7 +195,8 @@ namespace Karata.Server.Controllers
             return new LoginResult
             {
                 Email = originalEmail,
-                Role = role,
+                Username = user.Username,
+                Role = user.Role,
                 OriginalEmail = null,
                 AccessToken = jwtResult.AccessToken,
                 RefreshToken = jwtResult.RefreshToken.TokenString

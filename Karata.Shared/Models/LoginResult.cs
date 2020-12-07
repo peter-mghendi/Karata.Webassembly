@@ -7,6 +7,9 @@ namespace Karata.Shared.Models
         [JsonPropertyName("email")]
         public string Email { get; set; }
 
+        [JsonPropertyName("username")]
+        public string Username { get; set; }
+
         [JsonPropertyName("role")]
         public string Role { get; set; }
 

@@ -22,7 +22,7 @@
     @foreach (var message in messages)
     {
         <li class="list-group-item d-flex">
-            @message.Content
+            @message.Sender: @message.Content
             <small class="text-muted ml-auto">@message.DateSent.ToString()</small>
         </li>
     }
@@ -39,7 +39,22 @@
     protected override async Task OnInitializedAsync()
     {
         hubConnection = new HubConnectionBuilder()
-            .WithUrl("https://karata-server.herokuapp.com/hubs/chat")
+            .WithUrl("https://karata-server.herokuapp.com/hubs/chat", options =>
+            {
+                options.AccessTokenProvider = async () =>
+                {
+                    try
+                    {
+                        Authenticator.Authentication = await Client.RefreshTokenAsync(new() { RefreshToken = Authenticator.RefreshToken });
+                    }
+                    catch
+                    {
+                        // TODO: Handle this gracefully. Prompt re-login? Login modal?
+                    }
+
+                    return Authenticator.AccessToken;
+                };
+            })
             .Build();
 
         hubConnection.On<ChatMessage>(MessageReceived, message =>

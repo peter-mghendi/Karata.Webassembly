@@ -52,7 +52,7 @@ namespace Karata.Server.Infrastructure
                 throw new SecurityTokenException("Invalid token");
             }
 
-            var email = principal.Identity.Name;
+            var email = principal.FindFirst(ClaimTypes.Email)?.Value;
             var existingRefreshToken = await _refreshTokenService.GetTokenAsync(refreshToken);
 
             if (existingRefreshToken == null || existingRefreshToken.Email != email || existingRefreshToken.ExpireAt < now)
