@@ -26,6 +26,8 @@ namespace Karata.Web.Services
 
         public string Role => Authentication.Role;
 
+        public string Username => Authentication.Username;
+
         public AuthenticationService() => Authentication = new();
 
         public event PropertyChangedEventHandler PropertyChanged;

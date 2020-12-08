@@ -14,5 +14,7 @@ namespace Karata.Shared.Services
         public string RefreshToken { get; }
 
         public string Role { get; }
+
+        public string Username { get; }
     }
 }

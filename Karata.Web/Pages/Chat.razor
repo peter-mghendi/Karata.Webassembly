@@ -20,9 +20,18 @@
 <ul id="messagelist" class="list-group list-group-flush">
     @foreach (var message in messages)
     {
-        <li class="list-group-item d-flex">
-            @message.Sender: @message.Content
-            <small class="text-muted ml-auto">@message.DateSent.ToString()</small>
+        <li class="list-group-item">
+            <div>
+                <p>
+                    @if (message.Sender == Authenticator.Username)
+                    {
+                        <span class="oi oi-person mr-2" aria-hidden="true"></span>
+                    }
+                    <strong>@message.Sender</strong>
+                </p>
+                <p>@message.Content</p>
+                <p><small class="text-muted">@message.DateSent.ToString()</small></p>
+            </div>
         </li>
     }
 </ul>
